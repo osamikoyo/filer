@@ -7,6 +7,7 @@ import (
 	"filer/logger"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
 
@@ -15,16 +16,15 @@ type Server struct {
 	logger     *logger.Logger
 }
 
-func NewServer(cfg *config.Config, logger *logger.Logger) *Server {
+func NewServer(cfg *config.Config, logger *logger.Logger, r *chi.Mux) *Server {
 	handler := handler.NewHandler(cfg)
 
-	mux := http.NewServeMux()
 	server := &http.Server{
-		Handler: mux,
+		Handler: r,
 		Addr:    cfg.Addr,
 	}
 
-	handler.RegisterRoutes(mux)
+	handler.RegisterRoutes(r)
 
 	return &Server{
 		httpserver: server,
