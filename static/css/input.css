@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for file actions */
+.download-btn:hover {
+  @apply transform scale-105 shadow-lg;
+}
+
+.delete-btn:hover {
+  @apply transform scale-105 shadow-lg;
+}
+
+.file-item:hover {
+  @apply shadow-md;
+}
+
+/* Custom hover color for gray-750 */
+.hover\:bg-gray-750:hover {
+  background-color: rgb(55 65 81);
+}
+
+/* Animation for smooth transitions */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Loading spinner styles */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Notification animation */
+.notification-enter {
+  animation: slideInFromRight 0.3s ease-out;
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Better file icon colors */
+.file-icon-image {
+  @apply text-purple-400;
+}
+
+.file-icon-document {
+  @apply text-blue-400;
+}
+
+.file-icon-archive {
+  @apply text-yellow-400;
+}
+
+.file-icon-video {
+  @apply text-red-400;
+}
+
+.file-icon-audio {
+  @apply text-green-400;
+}
+
+.file-icon-default {
+  @apply text-gray-400;
+}
