@@ -5,9 +5,12 @@ import (
 	"filer/config"
 	"filer/logger"
 	"filer/server"
+	"net/http"
 	"os"
 	"os/signal"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
 )
 
@@ -27,8 +30,14 @@ func main() {
 	logger.Init(logCfg)
 
 	logger := logger.Get()
+	r := chi.NewRouter()
 
-	server := server.NewServer(cfg, logger)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+
+	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+
+	server := server.NewServer(cfg, logger, r)
 
 	go func() {
 		<-ctx.Done()
