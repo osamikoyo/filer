@@ -1,0 +1,13 @@
+{
+  "name": "file-server-frontend",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "bun run build:css && bun run build:templ",
+    "build:css": "bun tailwindcss -i ./static/css/input.css -o ./static/css/output.css",
+    "build:templ": "templ generate",
+    "watch": "bun run build:css --watch & bun run build:templ --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.1"
+  }
+}
