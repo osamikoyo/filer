@@ -3,3 +3,5 @@ text
 .env
 files
 *.log
+node_modules
+bin
