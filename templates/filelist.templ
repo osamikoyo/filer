@@ -1,0 +1,15 @@
+package templates
+
+templ FileList() {
+	<div id="file-list" class="space-y-3">
+		<ul 
+			id="file-list-ul" 
+			class="list-none w-full"
+			hx-get="/list" 
+			hx-trigger="load, every 5s" 
+			hx-swap="innerHTML"
+			hx-target="#file-list-ul"
+			hx-on::after-request="renderFileList(event)"
+		></ul>
+	</div>
+}
