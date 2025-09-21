@@ -1,0 +1,11 @@
+version : 3
+
+tasks:
+  build:
+    cmds:
+      - bun run build
+      - go build -o bin/app cmd/main.go
+  run:
+    cmds:
+      - task build
+      - ./bin/app 
