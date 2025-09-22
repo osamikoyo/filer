@@ -2,38 +2,79 @@ package handler
 
 import (
 	"fmt"
-	"io"
+	"log"
+	"mime"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
+
+	"github.com/go-chi/chi/v5"
 )
 
 func (h *Handler) Download(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "download method must be get", http.StatusMethodNotAllowed)
+	filename := chi.URLParam(r, "filename")
+	if filename == "" {
+		log.Printf("Download: filename parameter is missing")
+		http.Error(w, "filename is required", http.StatusBadRequest)
 		return
 	}
 
-	filename := filepath.Base(r.URL.Path)
-	filePath := filepath.Join(h.cfg.FileDir, filename)
-	if _, err := os.Stat(filename); err != nil {
-		http.Error(w, "file is not exist", http.StatusBadRequest)
+	// Clean the filename to prevent path traversal attacks
+	cleanFilename := filepath.Base(filename)
+	if cleanFilename == "." || cleanFilename == ".." {
+		log.Printf("Download: invalid filename: %s", filename)
+		http.Error(w, "invalid filename", http.StatusBadRequest)
 		return
 	}
 
-	file, err := os.Open(filePath)
+	filePath := filepath.Join(h.cfg.FileDir, cleanFilename)
+	
+	// Check if file exists and get file info
+	fileInfo, err := os.Stat(filePath)
 	if err != nil {
-		http.Error(w, "failed open file", http.StatusBadRequest)
+		if os.IsNotExist(err) {
+			log.Printf("Download: file not found: %s", cleanFilename)
+			http.Error(w, "file not found", http.StatusNotFound)
+		} else {
+			log.Printf("Download: error accessing file %s: %v", cleanFilename, err)
+			http.Error(w, "error accessing file", http.StatusInternalServerError)
+		}
 		return
 	}
-	defer file.Close()
 
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
-	w.Header().Set("Content-Type", "application/octet-stream")
-
-	if _, err = io.Copy(w, file); err != nil {
-		http.Error(w, "failed copy from file", http.StatusInternalServerError)
-
+	// Ensure it's a file, not a directory
+	if fileInfo.IsDir() {
+		log.Printf("Download: attempted to download directory: %s", cleanFilename)
+		http.Error(w, "cannot download directories", http.StatusBadRequest)
 		return
 	}
+
+	// Determine MIME type based on file extension
+	mimeType := mime.TypeByExtension(filepath.Ext(cleanFilename))
+	if mimeType == "" {
+		mimeType = "application/octet-stream"
+	}
+
+	// Set appropriate headers
+	w.Header().Set("Content-Type", mimeType)
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", fileInfo.Size()))
+	
+	// Properly encode filename for Content-Disposition header
+	// This handles filenames with special characters and non-ASCII characters
+	encodedFilename := url.QueryEscape(cleanFilename)
+	if strings.Contains(cleanFilename, " ") || strings.ContainsAny(cleanFilename, "áéíóúñü") {
+		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"; filename*=UTF-8''%s`, cleanFilename, encodedFilename))
+	} else {
+		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, cleanFilename))
+	}
+
+	// Enable browser caching for static files
+	w.Header().Set("Cache-Control", "public, max-age=31536000") // 1 year
+
+	log.Printf("Download: serving file %s (%d bytes, %s)", cleanFilename, fileInfo.Size(), mimeType)
+	
+	// Serve the file
+	http.ServeFile(w, r, filePath)
 }
