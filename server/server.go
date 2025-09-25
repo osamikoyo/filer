@@ -3,8 +3,10 @@ package server
 import (
 	"context"
 	"filer/config"
+	"filer/core"
 	"filer/handler"
 	"filer/logger"
+	"filer/storage"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -17,7 +19,10 @@ type Server struct {
 }
 
 func NewServer(cfg *config.Config, logger *logger.Logger, r *chi.Mux) *Server {
-	handler := handler.NewHandler(cfg)
+	storage := storage.NewStorage(logger)
+
+	core := core.NewFileServerCore(storage, cfg)
+	handler := handler.NewHandler(core, cfg)
 
 	server := &http.Server{
 		Handler: r,
